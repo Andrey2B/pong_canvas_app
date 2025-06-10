@@ -1,0 +1,18 @@
+﻿body {
+  background: #222;
+  color: white;
+  text-align: center;
+  font-family: sans-serif;
+}
+
+canvas {
+  display: block;
+  margin: auto;
+  background-color: black;
+}
+
+button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+}
