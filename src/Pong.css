@@ -1,63 +1,72 @@
-/* Pong.css */
 .pong-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background-color: #222;
-    color: white;
-    font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #000;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.score-board {
+  margin-bottom: 20px;
+  font-size: 36px;
+}
+
+.score {
+  font-weight: bold;
 }
 
 .pong-canvas {
-    background-color: black;
-    border: 2px solid white;
-    margin: 20px 0;
+  border: 2px solid white;
+  background-color: black;
 }
 
-.modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+.help-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
 }
 
-.modal-content {
-    background-color: #333;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 600px;
-    color: white;
+.help-content {
+  background-color: #222;
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 500px;
+  text-align: center;
+  border: 2px solid white;
 }
 
-.modal-content pre {
-    white-space: pre-wrap;
-    font-family: Arial, sans-serif;
-    line-height: 1.5;
+.help-content h2 {
+  margin-top: 0;
+  color: white;
 }
 
-.modal-content button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
+.help-content p {
+  margin: 15px 0;
+  line-height: 1.5;
+  color: #ddd;
 }
 
-.modal-content button:hover {
-    background-color: #45a049;
+.close-help {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
-h1 {
-    margin-bottom: 10px;
+.close-help:hover {
+  background-color: #555;
 }
