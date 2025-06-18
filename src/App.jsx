@@ -2,13 +2,14 @@ import React from 'react';
 import { createAssistant, createSmartappDebugger } from '@salutejs/client';
 import './Pong.css';
 
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 500;
+const CANVAS_WIDTH = window.innerWidth*0.98;
+const CANVAS_HEIGHT = window.innerHeight*0.9-200;
 const PADDLE_WIDTH = 15;
-const PADDLE_HEIGHT = 100;
+const PADDLE_HEIGHT = 100;  
 const BALL_SIZE = 15;
 const PADDLE_SPEED = 8;
-const BALL_SPEED = 1;
+const BALL_SPEED = 6;
+const BOT_REACTION_DELAY = 0.7; // Задержка реакции бота
 
 const initializeAssistant = (getState, getRecoveryState) => {
   if (process.env.NODE_ENV === 'development') {
@@ -40,7 +41,8 @@ export class App extends React.Component {
       player1Score: 0,
       player2Score: 0,
       gameStarted: false,
-      showHelpModal: false,
+      showHelpModal: true,
+      gamePaused: false,
       keysPressed: {}
     };
 
@@ -87,6 +89,7 @@ export class App extends React.Component {
     if (!this.state.gameStarted) {
       this.setState({
         gameStarted: true,
+        gamePaused: false,
         ballX: CANVAS_WIDTH / 2,
         ballY: CANVAS_HEIGHT / 2,
         ballSpeedX: Math.random() > 0.5 ? BALL_SPEED : -BALL_SPEED,
@@ -106,7 +109,7 @@ export class App extends React.Component {
   };
 
   updateGameState = () => {
-    if (!this.state.gameStarted) return;
+    if (!this.state.gameStarted || this.state.gamePaused) return;
 
     // Движение мяча
     let newBallX = this.state.ballX + this.state.ballSpeedX;
@@ -157,21 +160,28 @@ export class App extends React.Component {
       return;
     }
 
-    // Движение ракеток на основе нажатых клавиш
+    // Движение ракеток
     let newPlayer1Y = this.state.player1Y;
     let newPlayer2Y = this.state.player2Y;
 
-    if (this.state.keysPressed['w'] || this.state.keysPressed['W']) {
+    // Управление левой ракеткой (игрок)
+    if (this.state.keysPressed['ArrowUp']) {
       newPlayer1Y = Math.max(0, newPlayer1Y - PADDLE_SPEED);
     }
-    if (this.state.keysPressed['s'] || this.state.keysPressed['S']) {
+    if (this.state.keysPressed['ArrowDown']) {
       newPlayer1Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, newPlayer1Y + PADDLE_SPEED);
     }
-    if (this.state.keysPressed['ArrowUp']) {
-      newPlayer2Y = Math.max(0, newPlayer2Y - PADDLE_SPEED);
-    }
-    if (this.state.keysPressed['ArrowDown']) {
-      newPlayer2Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, newPlayer2Y + PADDLE_SPEED);
+
+    // Управление правой ракеткой (бот)
+    if (Math.random() > BOT_REACTION_DELAY) { // Добавляем небольшую задержку реакции бота
+      const paddleCenter = this.state.player2Y + PADDLE_HEIGHT / 2;
+      const ballFutureY = newBallY + (newBallSpeedY * (CANVAS_WIDTH - newBallX) / Math.abs(newBallSpeedX));
+      
+      if (paddleCenter < ballFutureY - 10) {
+        newPlayer2Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, newPlayer2Y + PADDLE_SPEED);
+      } else if (paddleCenter > ballFutureY + 10) {
+        newPlayer2Y = Math.max(0, newPlayer2Y - PADDLE_SPEED);
+      }
     }
 
     this.setState({
@@ -228,7 +238,13 @@ export class App extends React.Component {
     // Сообщение о начале игры
     if (!this.state.gameStarted) {
       ctx.font = '24px Arial';
-      ctx.fillText('Press SPACE to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      ctx.fillText('Нажмите ОК для запуска или скажите "старт"', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    }
+    
+    // Сообщение о паузе
+    if (this.state.gamePaused) {
+      ctx.font = '24px Arial';
+      ctx.fillText('Игра на паузе', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
     }
     
     this.animationFrameId = requestAnimationFrame(this.draw);
@@ -237,7 +253,6 @@ export class App extends React.Component {
   handleKeyDown = (e) => {
     const { keysPressed } = this.state;
     
-    // Обновляем состояние нажатых клавиш
     this.setState({
       keysPressed: {
         ...keysPressed,
@@ -246,18 +261,16 @@ export class App extends React.Component {
     });
 
     // Старт игры
-    if (e.key === ' ') {
+    if (e.key === ' ' || e.key === 'Enter') {
       this.startGame();
+      if (this.state.showHelpModal) {
+        this.setState({ showHelpModal: false, gamePaused: false });
+      }
     }
     
     // Помощь
     if (e.key === 'h' || e.key === 'H' || e.key === 'х' || e.key === 'Х') {
-      this.setState({ showHelpModal: true });
-    }
-    
-    // Закрытие помощи
-    if (e.key === 'Escape') {
-      this.setState({ showHelpModal: false });
+      this.setState({ showHelpModal: true, gamePaused: true });
     }
   };
 
@@ -273,21 +286,15 @@ export class App extends React.Component {
 
     console.log('Assistant action:', action);
     switch (action.type) {
-      case 'up':
-        this.setState(prevState => ({
-          player2Y: Math.max(0, prevState.player2Y - PADDLE_SPEED - 50)
-        }));
-        break;
-      case 'down':
-        this.setState(prevState => ({
-          player2Y: Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT + 50, prevState.player2Y + PADDLE_SPEED + 50)
-        }));
-        break;
       case 'start':
         this.startGame();
+        this.setState({ showHelpModal: false, gamePaused: false });
         break;
       case 'help':
-        this.setState({ showHelpModal: true });
+        this.setState({ showHelpModal: true, gamePaused: true });
+        break;
+      case 'stop':
+        this.setState({ showHelpModal: false, gamePaused: false });
         break;
       default:
         console.log('Unknown action:', action.type);
@@ -311,16 +318,18 @@ export class App extends React.Component {
           <div className="help-modal">
             <div className="help-content">
               <h2>Управление</h2>
-              <p><strong>Игрок 1:</strong> W (вверх), S (вниз)</p>
-              <p><strong>Игрок 2:</strong> Стрелки вверх/вниз</p>
-              <p><strong>Голосовые команды:</strong> "вверх", "вниз"</p>
-              <p><strong>Старт:</strong> Пробел или голосовая команда "старт"</p>
-              <p><strong>Помощь:</strong> H или голосовая команда "помощь"</p>
+              <p><strong>Игрок:</strong> Стрелки вверх, вниз</p>
+              <p><strong>Старт:</strong> Скажите "старт"</p>
+              <p><strong>Помощь:</strong> Скажите "помощь"</p>
+              <p><strong>Закрыть окно помощи:</strong> Скажите "закрыть"</p>
               <button 
                 className="close-help" 
-                onClick={() => this.setState({ showHelpModal: false })}
+                onClick={() => this.setState({ 
+                  showHelpModal: false, 
+                  gamePaused: false 
+                })}
               >
-                Закрыть (Esc)
+                Закрыть
               </button>
             </div>
           </div>
